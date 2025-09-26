@@ -6,7 +6,7 @@ A custom [Home Assistant](https://www.home-assistant.io/) integration that adds 
 
 - Simple configuration via the Home Assistant UI (config flow)
 - Polls the SolaX Cloud API every 5 minutes
-- Exposes all numeric metrics provided by the SolaX Cloud API, including detailed PV, grid and battery statistics
+- Exposes the full set of metrics provided by the SolaX Cloud API, including detailed PV, grid, battery and status statistics
 - Designed to work entirely through the cloud API (no local network connection required)
 
 ## Installation
