@@ -1,0 +1,58 @@
+{
+  "config": {
+    "flow_title": "{serial_number}",
+    "step": {
+      "user": {
+        "title": "Connect to SolaX Cloud",
+        "description": "Enter the token ID and inverter serial number from the SolaX Cloud portal.",
+        "data": {
+          "token_id": "Token ID",
+          "serial_number": "Inverter serial number"
+        }
+      }
+    },
+    "error": {
+      "invalid_auth": "Der Token oder die Seriennummer sind ungültig.",
+      "cannot_connect": "Verbindung zur SolaX Cloud API fehlgeschlagen."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "solax_cloud": {
+        "ac_power": {
+          "name": "AC-Leistung"
+        },
+        "yield_today": {
+          "name": "Ertrag heute"
+        },
+        "yield_total": {
+          "name": "Gesamtertrag"
+        },
+        "feed_in_power": {
+          "name": "Einspeiseleistung"
+        },
+        "feed_in_energy": {
+          "name": "Eingespeiste Energie"
+        },
+        "consume_energy": {
+          "name": "Verbrauchte Energie"
+        },
+        "consume_energy_today": {
+          "name": "Verbrauch heute"
+        },
+        "battery_power": {
+          "name": "Batterieleistung"
+        },
+        "state_of_charge": {
+          "name": "Batterieladung"
+        },
+        "ac_frequency": {
+          "name": "Netzfrequenz"
+        },
+        "temperature": {
+          "name": "Invertertemperatur"
+        }
+      }
+    }
+  }
+}

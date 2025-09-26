@@ -1,0 +1,11 @@
+{
+  "domain": "solax_cloud",
+  "name": "SolaX Cloud",
+  "config_flow": true,
+  "documentation": "https://github.com/example/ha_solax_cloud_integration",
+  "iot_class": "cloud_polling",
+  "integration_type": "hub",
+  "codeowners": ["@your-github"],
+  "loggers": ["custom_components.solax_cloud"],
+  "version": "0.1.0"
+}
