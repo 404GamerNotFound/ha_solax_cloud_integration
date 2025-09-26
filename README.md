@@ -6,7 +6,7 @@ A custom [Home Assistant](https://www.home-assistant.io/) integration that adds 
 
 - Simple configuration via the Home Assistant UI (config flow)
 - Polls the SolaX Cloud API every 5 minutes
-- Exposes common inverter metrics such as AC power, energy production, consumption and battery information
+- Exposes all numeric metrics provided by the SolaX Cloud API, including detailed PV, grid and battery statistics
 - Designed to work entirely through the cloud API (no local network connection required)
 
 ## Installation
@@ -28,3 +28,7 @@ Both pieces of information are required by the SolaX Cloud API, as documented by
 ## Disclaimer
 
 This project is not affiliated with or endorsed by SolaX. Use at your own risk.
+
+## Maintainer
+
+- [404GamerNotFound](https://github.com/404GamerNotFound)
