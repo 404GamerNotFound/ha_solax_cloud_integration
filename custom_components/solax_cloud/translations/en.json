@@ -51,6 +51,39 @@
         },
         "temperature": {
           "name": "Invertertemperatur"
+        },
+        "pv1_power": {
+          "name": "PV1-Leistung"
+        },
+        "pv1_voltage": {
+          "name": "PV1-Spannung"
+        },
+        "pv1_current": {
+          "name": "PV1-Strom"
+        },
+        "pv2_power": {
+          "name": "PV2-Leistung"
+        },
+        "pv2_voltage": {
+          "name": "PV2-Spannung"
+        },
+        "pv2_current": {
+          "name": "PV2-Strom"
+        },
+        "battery_voltage": {
+          "name": "Batteriespannung"
+        },
+        "battery_current": {
+          "name": "Batteriestrom"
+        },
+        "grid_voltage": {
+          "name": "Netzspannung"
+        },
+        "grid_current": {
+          "name": "Netzstrom"
+        },
+        "grid_power": {
+          "name": "Netzleistung"
         }
       }
     }
