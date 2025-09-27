@@ -44,7 +44,9 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_SERIAL_NUMBER: user_input[CONF_SERIAL_NUMBER].strip().upper(),
             }
 
-            await self.async_set_unique_id(user_input[CONF_SERIAL_NUMBER])
+            await self.async_set_unique_id(
+                user_input[CONF_SERIAL_NUMBER], raise_on_progress=False
+            )
             self._abort_if_unique_id_configured()
 
             session = async_get_clientsession(self.hass)
