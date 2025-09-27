@@ -14,7 +14,17 @@ from .api import (
     SolaxCloudAuthenticationError,
     SolaxCloudRequestData,
 )
-from .const import CONF_SERIAL_NUMBER, CONF_TOKEN_ID, DOMAIN
+from .const import CONF_SERIAL_NUMBER, CONF_TOKEN_ID, DOMAIN, LOGGER
+
+
+def _redact_value(value: str, keep: int = 4) -> str:
+    """Return a redacted representation of sensitive values."""
+
+    if not value:
+        return ""
+    if len(value) <= keep:
+        return "*" * len(value)
+    return f"{'*' * (len(value) - keep)}{value[-keep:]}"
 
 
 class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
@@ -43,13 +53,28 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 serial_number=user_input[CONF_SERIAL_NUMBER],
             )
             api = SolaxCloudApiClient(session, request_data)
+            log_context = {
+                "serial_number": _redact_value(request_data.serial_number),
+                "token_id": _redact_value(request_data.token_id),
+            }
 
             try:
                 result = await api.async_get_data()
-            except SolaxCloudAuthenticationError:
+            except SolaxCloudAuthenticationError as err:
+                LOGGER.error(
+                    "Authentication with the SolaX Cloud API failed during config flow",
+                    extra=log_context,
+                    exc_info=err,
+                )
                 errors["base"] = "invalid_auth"
             except SolaxCloudApiError as err:
                 error_message = str(err).strip()
+                LOGGER.error(
+                    "SolaX Cloud API error during config flow: %s",
+                    error_message or "unknown",
+                    extra=log_context,
+                    exc_info=err,
+                )
                 if error_message and error_message.lower() != "unknown error":
                     errors["base"] = "api_error"
                 else:

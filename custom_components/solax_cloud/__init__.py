@@ -26,6 +26,16 @@ from .const import (
 )
 
 
+def _redact_value(value: str, keep: int = 4) -> str:
+    """Return a redacted representation of sensitive values."""
+
+    if not value:
+        return ""
+    if len(value) <= keep:
+        return "*" * len(value)
+    return f"{'*' * (len(value) - keep)}{value[-keep:]}"
+
+
 async def async_setup(hass: HomeAssistant, config: dict) -> bool:
     """Set up SolaX Cloud via YAML (not supported)."""
 
@@ -44,12 +54,28 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     )
     api = SolaxCloudApiClient(session, request_data)
 
+    log_context = {
+        "entry_id": entry.entry_id,
+        "serial_number": _redact_value(request_data.serial_number),
+    }
+
     async def async_update_data() -> dict:
         try:
             return await api.async_get_data()
         except SolaxCloudAuthenticationError as err:
+            LOGGER.error(
+                "Authentication failed while updating SolaX Cloud data",
+                extra=log_context,
+                exc_info=err,
+            )
             raise UpdateFailed("Authentication failed while updating SolaX Cloud data") from err
         except SolaxCloudApiError as err:
+            LOGGER.error(
+                "Failed to update SolaX Cloud data: %s",
+                err,
+                extra=log_context,
+                exc_info=err,
+            )
             raise UpdateFailed(str(err)) from err
 
     coordinator = DataUpdateCoordinator(
