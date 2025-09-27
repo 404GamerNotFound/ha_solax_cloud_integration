@@ -21,6 +21,9 @@ A custom [Home Assistant](https://www.home-assistant.io/) integration that adds 
 During configuration you will be asked for:
 
 - **Token ID** – available from the SolaX Cloud portal under *User Center → API Management*.
+  Generate the token in the web portal (not the mobile app) and bind your plant
+  to it in the **Bind Plant** section; otherwise the API treats the token as
+  unassigned and rejects authentication attempts.
 - **Inverter serial number** – the serial number of the inverter registered in SolaX Cloud.
 
 ### Why the serial number is required
@@ -37,13 +40,16 @@ correct, SolaX returned a generic error instead of the dedicated "token/serial d
 
 1. Double-check that the serial number was entered without spaces and matches the value in the SolaX Cloud portal (it is usually
    printed in upper-case letters).
-2. Ensure the API token has not been regenerated recently. Each time you generate a new token in the portal, the previous token is
+2. Ensure the API token is bound to the plant that contains your inverter. In the SolaX Cloud web portal go to *User Center → API
+   Management*, expand the token and use **Bind Plant** to add the device. Tokens without a bound plant trigger the same
+   "token/serial does not match" error even if both values are correct.
+3. Ensure the API token has not been regenerated recently. Each time you generate a new token in the portal, the previous token is
    invalidated.
-3. Verify that the SolaX Cloud service is reachable from your Home Assistant host. Temporary outages or regional endpoints being
+4. Verify that the SolaX Cloud service is reachable from your Home Assistant host. Temporary outages or regional endpoints being
    unavailable also trigger the same error message. The integration automatically tries multiple regional hosts (for example
    `www.solaxcloud.com`, `api.solaxcloud.com`, `euapi.solaxcloud.com` and `usapi.solaxcloud.com`) and both documented API paths,
    so make sure outbound traffic to these hosts is allowed by your firewall.
-4. Enable debug logging for `custom_components.solax_cloud` to collect the exact response returned by the API when opening an
+5. Enable debug logging for `custom_components.solax_cloud` to collect the exact response returned by the API when opening an
    issue.
 
 The integration validates the credentials during configuration and only creates the entry once a successful response is received.
