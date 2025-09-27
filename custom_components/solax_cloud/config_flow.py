@@ -27,6 +27,15 @@ def _redact_value(value: str, keep: int = 4) -> str:
     return f"{'*' * (len(value) - keep)}{value[-keep:]}"
 
 
+def _classify_api_error(message: str) -> tuple[str, dict[str, str] | None]:
+    """Translate API error messages into config flow errors and placeholders."""
+
+    normalized = message.casefold().strip()
+    if not normalized or "unknown error" in normalized:
+        return "cannot_connect", None
+    return "api_error", {"error": message}
+
+
 class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for SolaX Cloud."""
 
@@ -36,7 +45,7 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the initial step."""
 
         errors: dict[str, str] = {}
-        error_message: str | None = None
+        description_placeholders: dict[str, str] | None = None
 
         if user_input is not None:
             user_input = {
@@ -44,7 +53,9 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 CONF_SERIAL_NUMBER: user_input[CONF_SERIAL_NUMBER].strip().upper(),
             }
 
-            await self.async_set_unique_id(user_input[CONF_SERIAL_NUMBER])
+            await self.async_set_unique_id(
+                user_input[CONF_SERIAL_NUMBER], raise_on_progress=False
+            )
             self._abort_if_unique_id_configured()
 
             session = async_get_clientsession(self.hass)
@@ -75,11 +86,9 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                     extra=log_context,
                     exc_info=err,
                 )
-                if error_message and error_message.lower() != "unknown error":
-                    errors["base"] = "api_error"
-                else:
-                    error_message = None
-                    errors["base"] = "cannot_connect"
+                errors["base"], description_placeholders = _classify_api_error(
+                    error_message
+                )
             else:
                 # Store some metadata for device info purposes
                 return self.async_create_entry(
@@ -93,10 +102,6 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_SERIAL_NUMBER): str,
             }
         )
-
-        description_placeholders = None
-        if errors.get("base") == "api_error" and error_message:
-            description_placeholders = {"error": error_message}
 
         return self.async_show_form(
             step_id="user",
