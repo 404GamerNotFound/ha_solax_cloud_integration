@@ -89,12 +89,18 @@ class SolaxCloudApiClient:
         ) + [url for url in API_BASE_URLS if url != self._base_url]
 
         last_error: SolaxCloudApiError | None = None
+        auth_error: SolaxCloudAuthenticationError | None = None
 
         for base_url in endpoints:
             try:
                 result = await self._async_fetch(base_url)
-            except SolaxCloudAuthenticationError:
-                raise
+            except SolaxCloudAuthenticationError as err:
+                auth_error = err
+                LOGGER.debug(
+                    "Authentication failed for SolaX Cloud endpoint, trying next",
+                    extra=self._context(endpoint=base_url, error=str(err)),
+                )
+                continue
             except SolaxCloudApiError as err:
                 last_error = err
                 LOGGER.debug(
@@ -120,6 +126,9 @@ class SolaxCloudApiClient:
                 extra=self._context(error=str(last_error)),
             )
             raise last_error
+
+        if auth_error is not None:
+            raise auth_error
 
         raise SolaxCloudApiError("Could not connect to the SolaX Cloud API")
 
