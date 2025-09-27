@@ -14,6 +14,7 @@ from pytest import raises
 from custom_components.solax_cloud.api import (
     SolaxCloudApiClient,
     SolaxCloudApiError,
+    SolaxCloudAuthenticationError,
     SolaxCloudRequestData,
 )
 
@@ -83,4 +84,34 @@ async def test_api_client_raises_for_invalid_json(monkeypatch) -> None:
     client = SolaxCloudApiClient(session, SolaxCloudRequestData("token", "serial"))
 
     with raises(SolaxCloudApiError):
+        await client.async_get_data()
+
+
+@mark.asyncio
+async def test_api_client_raises_auth_error_for_serial_mismatch(monkeypatch) -> None:
+    """Ensure serial/token mismatches raise the dedicated auth error."""
+
+    response = AsyncMock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = {
+        "success": False,
+        "exception": "The serial number does not belong to this token",
+    }
+
+    context_manager = AsyncMock()
+    context_manager.__aenter__.return_value = response
+    context_manager.__aexit__.return_value = False
+
+    session = MagicMock()
+    session.get.return_value = context_manager
+
+    monkeypatch.setattr(
+        "custom_components.solax_cloud.api.API_BASE_URLS",
+        ("https://only",),
+        raising=False,
+    )
+
+    client = SolaxCloudApiClient(session, SolaxCloudRequestData("token", "serial"))
+
+    with raises(SolaxCloudAuthenticationError):
         await client.async_get_data()

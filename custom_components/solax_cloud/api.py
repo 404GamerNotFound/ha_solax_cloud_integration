@@ -8,6 +8,7 @@ from dataclasses import dataclass
 from json import JSONDecodeError
 
 from aiohttp import ClientError, ClientSession, ContentTypeError
+from typing import Final
 
 from .const import (
     API_BASE_URLS,
@@ -32,6 +33,23 @@ class SolaxCloudRequestData:
 
     token_id: str
     serial_number: str
+
+
+_AUTH_MESSAGE_CONTEXT: Final[tuple[str, ...]] = ("token", "tokenid", "serial", "sn", "inverter")
+
+_AUTH_ERROR_MARKERS: Final[tuple[str, ...]] = (
+    "not match",
+    "not belong",
+    "does not belong",
+    "doesn't belong",
+    "not exist",
+    "does not exist",
+    "doesn't exist",
+    "invalid",
+    "mismatch",
+    "error",
+    "expired",
+)
 
 
 class SolaxCloudApiClient:
@@ -104,8 +122,10 @@ class SolaxCloudApiClient:
 
         if not payload.get(SUCCESS_KEY, False):
             message = payload.get(EXCEPTION_KEY) or "Unknown error"
-            # Invalid token/serial number combinations use a specific exception string
-            if "not match" in message.lower() or "tokenid" in message.lower():
+            normalized = message.casefold()
+            if any(token in normalized for token in _AUTH_MESSAGE_CONTEXT) and any(
+                marker in normalized for marker in _AUTH_ERROR_MARKERS
+            ):
                 raise SolaxCloudAuthenticationError(message)
             raise SolaxCloudApiError(message)
 
