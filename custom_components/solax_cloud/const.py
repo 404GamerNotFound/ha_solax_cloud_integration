@@ -9,9 +9,27 @@ PLATFORMS: list[str] = ["sensor"]
 
 LOGGER: Logger = getLogger(__package__)
 
-API_BASE_URLS: tuple[str, ...] = (
-    "https://www.solaxcloud.com:9443/proxy/api/getRealtimeInfo.do",
-    "https://euapi.solaxcloud.com:9443/proxy/api/getRealtimeInfo.do",
+_API_HOSTS: tuple[str, ...] = (
+    "www.solaxcloud.com",
+    "api.solaxcloud.com",
+    "euapi.solaxcloud.com",
+    "usapi.solaxcloud.com",
+)
+
+_API_PORTS: tuple[str, ...] = (":9443", "")
+
+_API_PATHS: tuple[str, ...] = (
+    "/proxy/api/getRealtimeInfo.do",
+    "/proxyApp/api/getRealtimeInfo.do",
+)
+
+API_BASE_URLS: tuple[str, ...] = tuple(
+    dict.fromkeys(
+        f"https://{host}{port}{path}"
+        for host in _API_HOSTS
+        for port in _API_PORTS
+        for path in _API_PATHS
+    )
 )
 
 CONF_TOKEN_ID = "token_id"
