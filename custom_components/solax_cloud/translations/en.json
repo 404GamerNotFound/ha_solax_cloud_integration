@@ -12,8 +12,9 @@
       }
     },
     "error": {
-      "invalid_auth": "Der Token oder die Seriennummer sind ungültig.",
-      "cannot_connect": "Verbindung zur SolaX Cloud API fehlgeschlagen."
+      "invalid_auth": "The token ID or serial number is invalid.",
+      "cannot_connect": "Failed to connect to the SolaX Cloud API.",
+      "api_error": "Failed to connect to the SolaX Cloud API: {error}"
     }
   },
   "entity": {

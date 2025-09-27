@@ -26,6 +26,7 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         """Handle the initial step."""
 
         errors: dict[str, str] = {}
+        error_message: str | None = None
 
         if user_input is not None:
             user_input = {
@@ -47,8 +48,13 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
                 result = await api.async_get_data()
             except SolaxCloudAuthenticationError:
                 errors["base"] = "invalid_auth"
-            except SolaxCloudApiError:
-                errors["base"] = "cannot_connect"
+            except SolaxCloudApiError as err:
+                error_message = str(err).strip()
+                if error_message and error_message.lower() != "unknown error":
+                    errors["base"] = "api_error"
+                else:
+                    error_message = None
+                    errors["base"] = "cannot_connect"
             else:
                 # Store some metadata for device info purposes
                 return self.async_create_entry(
@@ -63,7 +69,16 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             }
         )
 
-        return self.async_show_form(step_id="user", data_schema=data_schema, errors=errors)
+        description_placeholders = None
+        if errors.get("base") == "api_error" and error_message:
+            description_placeholders = {"error": error_message}
+
+        return self.async_show_form(
+            step_id="user",
+            data_schema=data_schema,
+            errors=errors,
+            description_placeholders=description_placeholders,
+        )
 
     async def async_step_import(self, import_data: dict) -> FlowResult:
         """Handle import from configuration.yaml."""
