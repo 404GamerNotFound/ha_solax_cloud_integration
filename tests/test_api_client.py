@@ -61,6 +61,53 @@ async def test_api_client_falls_back_to_alternative_endpoint(monkeypatch) -> Non
 
 
 @mark.asyncio
+async def test_api_client_retries_after_auth_error(monkeypatch) -> None:
+    """Ensure authentication errors on one endpoint do not prevent retries."""
+
+    call_order: list[str] = []
+
+    auth_response = AsyncMock()
+    auth_response.raise_for_status.return_value = None
+    auth_response.json.return_value = {
+        "success": False,
+        "exception": "Token does not belong to inverter serial",
+    }
+
+    success_response = AsyncMock()
+    success_response.raise_for_status.return_value = None
+    success_response.json.return_value = {"success": True, "result": {"value": 7}}
+
+    auth_context = AsyncMock()
+    auth_context.__aenter__.return_value = auth_response
+    auth_context.__aexit__.return_value = False
+
+    success_context = AsyncMock()
+    success_context.__aenter__.return_value = success_response
+    success_context.__aexit__.return_value = False
+
+    session = MagicMock()
+
+    def _mock_get(url: str, *args: Any, **kwargs: Any) -> Any:
+        call_order.append(url)
+        return auth_context if len(call_order) == 1 else success_context
+
+    session.get.side_effect = _mock_get
+
+    monkeypatch.setattr(
+        "custom_components.solax_cloud.api.API_BASE_URLS",
+        ("https://first", "https://second"),
+        raising=False,
+    )
+
+    client = SolaxCloudApiClient(session, SolaxCloudRequestData("token", "serial"))
+
+    result = await client.async_get_data()
+
+    assert call_order == ["https://first", "https://second"]
+    assert result == {"value": 7}
+
+
+@mark.asyncio
 async def test_api_client_raises_for_invalid_json(monkeypatch) -> None:
     """Ensure the client fails gracefully when the payload is not JSON."""
 
