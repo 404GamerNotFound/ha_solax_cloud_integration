@@ -5,7 +5,9 @@ from __future__ import annotations
 from asyncio import TimeoutError as AsyncioTimeoutError
 from dataclasses import dataclass
 
-from aiohttp import ClientError, ClientSession
+from json import JSONDecodeError
+
+from aiohttp import ClientError, ClientSession, ContentTypeError
 
 from .const import (
     API_BASE_URLS,
@@ -88,6 +90,8 @@ class SolaxCloudApiClient:
             async with self._session.get(base_url, params=params, timeout=30) as response:
                 response.raise_for_status()
                 payload: dict = await response.json(content_type=None)
+        except (ContentTypeError, JSONDecodeError) as err:
+            raise SolaxCloudApiError("Invalid response received from the SolaX Cloud API") from err
         except ClientError as err:
             raise SolaxCloudApiError("Could not connect to the SolaX Cloud API") from err
         except AsyncioTimeoutError as err:

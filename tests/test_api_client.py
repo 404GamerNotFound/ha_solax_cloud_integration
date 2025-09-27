@@ -8,7 +8,14 @@ from aiohttp import ClientError
 from pytest import mark
 from unittest.mock import AsyncMock, MagicMock
 
-from custom_components.solax_cloud.api import SolaxCloudApiClient, SolaxCloudRequestData
+from aiohttp import ContentTypeError
+from pytest import raises
+
+from custom_components.solax_cloud.api import (
+    SolaxCloudApiClient,
+    SolaxCloudApiError,
+    SolaxCloudRequestData,
+)
 
 
 @mark.asyncio
@@ -50,3 +57,30 @@ async def test_api_client_falls_back_to_alternative_endpoint(monkeypatch) -> Non
 
     assert call_order == ["https://first", "https://second"]
     assert result == {"value": 42}
+
+
+@mark.asyncio
+async def test_api_client_raises_for_invalid_json(monkeypatch) -> None:
+    """Ensure the client fails gracefully when the payload is not JSON."""
+
+    response = AsyncMock()
+    response.raise_for_status.return_value = None
+    response.json.side_effect = ContentTypeError(MagicMock(), ("", ""), message="bad json")
+
+    context_manager = AsyncMock()
+    context_manager.__aenter__.return_value = response
+    context_manager.__aexit__.return_value = False
+
+    session = MagicMock()
+    session.get.return_value = context_manager
+
+    monkeypatch.setattr(
+        "custom_components.solax_cloud.api.API_BASE_URLS",
+        ("https://only",),
+        raising=False,
+    )
+
+    client = SolaxCloudApiClient(session, SolaxCloudRequestData("token", "serial"))
+
+    with raises(SolaxCloudApiError):
+        await client.async_get_data()
