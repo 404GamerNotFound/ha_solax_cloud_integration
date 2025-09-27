@@ -40,8 +40,9 @@ correct, SolaX returned a generic error instead of the dedicated "token/serial d
 2. Ensure the API token has not been regenerated recently. Each time you generate a new token in the portal, the previous token is
    invalidated.
 3. Verify that the SolaX Cloud service is reachable from your Home Assistant host. Temporary outages or regional endpoints being
-   unavailable also trigger the same error message. The integration automatically tries both the global (`www.solaxcloud.com`)
-   and the European (`euapi.solaxcloud.com`) endpoints, so make sure outbound traffic to both hosts is allowed by your firewall.
+   unavailable also trigger the same error message. The integration automatically tries multiple regional hosts (for example
+   `www.solaxcloud.com`, `api.solaxcloud.com`, `euapi.solaxcloud.com` and `usapi.solaxcloud.com`) and both documented API paths,
+   so make sure outbound traffic to these hosts is allowed by your firewall.
 4. Enable debug logging for `custom_components.solax_cloud` to collect the exact response returned by the API when opening an
    issue.
 
