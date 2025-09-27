@@ -9,8 +9,6 @@ from aiohttp import ClientError, ClientSession
 
 from .const import (
     API_BASE_URLS,
-    CONF_SERIAL_NUMBER,
-    CONF_TOKEN_ID,
     EXCEPTION_KEY,
     LOGGER,
     RESULT_KEY,
@@ -77,7 +75,7 @@ class SolaxCloudApiClient:
         """Fetch data from a specific endpoint."""
 
         params = {
-            CONF_TOKEN_ID: self._data.token_id,
+            "tokenId": self._data.token_id,
             "sn": self._data.serial_number,
         }
 
