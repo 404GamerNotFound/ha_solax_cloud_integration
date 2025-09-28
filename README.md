@@ -24,7 +24,8 @@ During configuration you will be asked for:
   Generate the token in the web portal (not the mobile app) and bind your plant
   to it in the **Bind Plant** section; otherwise the API treats the token as
   unassigned and rejects authentication attempts.
-- **Inverter serial number** – the serial number of the inverter registered in SolaX Cloud.
+- **Inverter serial number** – the serial number of the inverter registered in SolaX Cloud. The API treats the value as case
+  sensitive, so enter it exactly as shown in the portal or on the inverter label.
 
 ### Why the serial number is required
 

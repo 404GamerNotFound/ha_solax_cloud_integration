@@ -36,6 +36,23 @@ def _classify_api_error(message: str) -> tuple[str, dict[str, str] | None]:
     return "api_error", {"error": message}
 
 
+def _normalize_credentials(token_id: str, serial_number: str) -> tuple[dict, str]:
+    """Normalise user supplied credentials for storage and uniqueness checks."""
+
+    cleaned_data = {
+        CONF_TOKEN_ID: token_id.strip(),
+        CONF_SERIAL_NUMBER: serial_number.strip(),
+    }
+
+    # SolaX serial numbers are usually printed in upper-case, but the API treats
+    # them as case-sensitive. We therefore keep the original casing for storage
+    # while still normalising the unique ID to avoid creating duplicate entries
+    # for the same device when users enter the serial in a different case.
+    unique_id = cleaned_data[CONF_SERIAL_NUMBER].upper()
+
+    return cleaned_data, unique_id
+
+
 class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
     """Handle a config flow for SolaX Cloud."""
 
@@ -48,14 +65,11 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
         description_placeholders: dict[str, str] | None = None
 
         if user_input is not None:
-            user_input = {
-                CONF_TOKEN_ID: user_input[CONF_TOKEN_ID].strip(),
-                CONF_SERIAL_NUMBER: user_input[CONF_SERIAL_NUMBER].strip().upper(),
-            }
-
-            await self.async_set_unique_id(
-                user_input[CONF_SERIAL_NUMBER], raise_on_progress=False
+            user_input, unique_id = _normalize_credentials(
+                user_input[CONF_TOKEN_ID], user_input[CONF_SERIAL_NUMBER]
             )
+
+            await self.async_set_unique_id(unique_id, raise_on_progress=False)
             self._abort_if_unique_id_configured()
 
             session = async_get_clientsession(self.hass)
