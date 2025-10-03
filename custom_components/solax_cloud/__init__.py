@@ -17,6 +17,7 @@ from .api import (
     SolaxCloudRequestData,
 )
 from .const import (
+    CONF_API_BASE_URL,
     CONF_SERIAL_NUMBER,
     CONF_TOKEN_ID,
     COORDINATOR_UPDATE_INTERVAL,
@@ -51,6 +52,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     request_data = SolaxCloudRequestData(
         token_id=entry.data[CONF_TOKEN_ID],
         serial_number=entry.data[CONF_SERIAL_NUMBER],
+        api_base_url=entry.data.get(CONF_API_BASE_URL),
     )
     api = SolaxCloudApiClient(session, request_data)
 
