@@ -14,7 +14,13 @@ from .api import (
     SolaxCloudAuthenticationError,
     SolaxCloudRequestData,
 )
-from .const import CONF_SERIAL_NUMBER, CONF_TOKEN_ID, DOMAIN, LOGGER
+from .const import (
+    CONF_API_BASE_URL,
+    CONF_SERIAL_NUMBER,
+    CONF_TOKEN_ID,
+    DOMAIN,
+    LOGGER,
+)
 
 
 def _redact_value(value: str, keep: int = 4) -> str:
@@ -36,13 +42,19 @@ def _classify_api_error(message: str) -> tuple[str, dict[str, str] | None]:
     return "api_error", {"error": message}
 
 
-def _normalize_credentials(token_id: str, serial_number: str) -> tuple[dict, str]:
+def _normalize_credentials(
+    token_id: str, serial_number: str, api_base_url: str | None = None
+) -> tuple[dict, str]:
     """Normalise user supplied credentials for storage and uniqueness checks."""
 
     cleaned_data = {
         CONF_TOKEN_ID: token_id.strip(),
         CONF_SERIAL_NUMBER: serial_number.strip(),
     }
+
+    if api_base_url is not None:
+        value = api_base_url.strip()
+        cleaned_data[CONF_API_BASE_URL] = value or None
 
     # SolaX serial numbers are usually printed in upper-case, but the API treats
     # them as case-sensitive. We therefore keep the original casing for storage
@@ -66,7 +78,9 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
 
         if user_input is not None:
             user_input, unique_id = _normalize_credentials(
-                user_input[CONF_TOKEN_ID], user_input[CONF_SERIAL_NUMBER]
+                user_input[CONF_TOKEN_ID],
+                user_input[CONF_SERIAL_NUMBER],
+                user_input.get(CONF_API_BASE_URL),
             )
 
             await self.async_set_unique_id(unique_id, raise_on_progress=False)
@@ -76,6 +90,7 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             request_data = SolaxCloudRequestData(
                 token_id=user_input[CONF_TOKEN_ID],
                 serial_number=user_input[CONF_SERIAL_NUMBER],
+                api_base_url=user_input.get(CONF_API_BASE_URL),
             )
             api = SolaxCloudApiClient(session, request_data)
             log_context = {
@@ -114,6 +129,7 @@ class SolaxCloudConfigFlow(config_entries.ConfigFlow, domain=DOMAIN):
             {
                 vol.Required(CONF_TOKEN_ID): str,
                 vol.Required(CONF_SERIAL_NUMBER): str,
+                vol.Required(CONF_API_BASE_URL, default="https://global.solaxcloud.com"): str,
             }
         )
 

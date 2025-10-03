@@ -6,12 +6,15 @@ from asyncio import TimeoutError as AsyncioTimeoutError
 from dataclasses import dataclass
 
 from json import JSONDecodeError
+from urllib.parse import urlparse
 
 from aiohttp import ClientError, ClientResponseError, ClientSession, ContentTypeError
 from typing import Any, Final
 
 from .const import (
     API_BASE_URLS,
+    API_PATHS,
+    API_PORTS,
     EXCEPTION_KEY,
     LOGGER,
     RESULT_KEY,
@@ -33,6 +36,7 @@ class SolaxCloudRequestData:
 
     token_id: str
     serial_number: str
+    api_base_url: str | None = None
 
 
 _AUTH_MESSAGE_CONTEXT: Final[tuple[str, ...]] = ("token", "tokenid", "serial", "sn", "inverter")
@@ -73,6 +77,8 @@ class SolaxCloudApiClient:
             "token_id": _redact_value(data.token_id),
             "serial_number": _redact_value(data.serial_number),
         }
+        if data.api_base_url:
+            self._log_context["api_base_url"] = data.api_base_url
 
     def _context(self, **extra: Any) -> dict[str, Any]:
         """Return logging context enriched with integration metadata."""
@@ -84,9 +90,20 @@ class SolaxCloudApiClient:
     async def async_get_data(self) -> dict:
         """Return the latest data from the cloud API."""
 
-        endpoints = (
-            [self._base_url] if self._base_url else []
-        ) + [url for url in API_BASE_URLS if url != self._base_url]
+        custom_endpoints = self._custom_endpoints()
+
+        endpoints: list[str] = []
+
+        if self._base_url:
+            endpoints.append(self._base_url)
+
+        for url in custom_endpoints:
+            if url not in endpoints:
+                endpoints.append(url)
+
+        for url in API_BASE_URLS:
+            if url not in endpoints:
+                endpoints.append(url)
 
         last_error: SolaxCloudApiError | None = None
         auth_error: SolaxCloudAuthenticationError | None = None
@@ -131,6 +148,60 @@ class SolaxCloudApiClient:
             raise auth_error
 
         raise SolaxCloudApiError("Could not connect to the SolaX Cloud API")
+
+    def _custom_endpoints(self) -> tuple[str, ...]:
+        """Return endpoints derived from the user supplied base URL."""
+
+        if not self._data.api_base_url:
+            return ()
+
+        candidate = self._data.api_base_url.strip()
+        if not candidate:
+            return ()
+
+        if "://" not in candidate:
+            candidate = f"https://{candidate}"
+
+        try:
+            parsed = urlparse(candidate)
+        except ValueError:
+            LOGGER.warning(
+                "Ignoring invalid custom SolaX Cloud API base URL", extra=self._context()
+            )
+            return ()
+
+        if not parsed.scheme or not parsed.netloc:
+            LOGGER.warning(
+                "Ignoring custom SolaX Cloud API base URL without scheme or host",
+                extra=self._context(),
+            )
+            return ()
+
+        host = parsed.hostname
+        if host is None:
+            LOGGER.warning(
+                "Ignoring custom SolaX Cloud API base URL with invalid host",
+                extra=self._context(),
+            )
+            return ()
+
+        if ":" in host and not host.startswith("["):
+            host = f"[{host}]"
+
+        if parsed.port is not None:
+            base_variants = [f"{parsed.scheme}://{host}:{parsed.port}"]
+        else:
+            base_variants = [f"{parsed.scheme}://{host}{port}" for port in API_PORTS]
+
+        path = parsed.path.rstrip("/")
+        if path and path.endswith(".do"):
+            suffixes = (path,)
+        else:
+            suffixes = API_PATHS
+
+        endpoints = [f"{base}{suffix}" for base in base_variants for suffix in suffixes]
+
+        return tuple(dict.fromkeys(endpoints))
 
     async def _async_fetch(self, base_url: str) -> dict:
         """Fetch data from a specific endpoint."""

@@ -162,3 +162,37 @@ async def test_api_client_raises_auth_error_for_serial_mismatch(monkeypatch) -> 
 
     with raises(SolaxCloudAuthenticationError):
         await client.async_get_data()
+
+
+@mark.asyncio
+async def test_api_client_prefers_user_supplied_endpoint(monkeypatch) -> None:
+    """The client should prioritise the custom endpoint before fallbacks."""
+
+    call_order: list[str] = []
+
+    response = AsyncMock()
+    response.raise_for_status.return_value = None
+    response.json.return_value = {"success": True, "result": {"value": 1}}
+
+    context_manager = AsyncMock()
+    context_manager.__aenter__.return_value = response
+    context_manager.__aexit__.return_value = False
+
+    session = MagicMock()
+    session.get.side_effect = lambda url, *args, **kwargs: call_order.append(url) or context_manager
+
+    monkeypatch.setattr(
+        "custom_components.solax_cloud.api.API_BASE_URLS",
+        ("https://fallback",),
+        raising=False,
+    )
+
+    client = SolaxCloudApiClient(
+        session,
+        SolaxCloudRequestData("token", "serial", "https://custom.example"),
+    )
+
+    result = await client.async_get_data()
+
+    assert call_order[0].startswith("https://custom.example")
+    assert result == {"value": 1}

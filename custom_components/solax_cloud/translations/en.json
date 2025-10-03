@@ -4,10 +4,11 @@
     "step": {
       "user": {
         "title": "Connect to SolaX Cloud",
-        "description": "Enter the token ID and inverter serial number from the SolaX Cloud portal.",
+        "description": "Enter the token ID, inverter serial number and API base URL from the SolaX Cloud portal.",
         "data": {
           "token_id": "Token ID",
-          "serial_number": "Inverter serial number"
+          "serial_number": "Inverter serial number",
+          "api_base_url": "API base URL"
         }
       }
     },
