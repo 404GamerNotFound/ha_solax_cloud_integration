@@ -188,36 +188,20 @@ class SolaxCloudApiClient:
         if ":" in host and not host.startswith("["):
             host = f"[{host}]"
 
-        base_variants: list[str] = []
         if parsed.port is not None:
-            base_variants.append(f"{parsed.scheme}://{host}:{parsed.port}")
-
-        for port in API_PORTS:
-            base = f"{parsed.scheme}://{host}{port}"
-            if base not in base_variants:
-                base_variants.append(base)
+            base_variants = [f"{parsed.scheme}://{host}:{parsed.port}"]
+        else:
+            base_variants = [f"{parsed.scheme}://{host}{port}" for port in API_PORTS]
 
         path = parsed.path.rstrip("/")
-        suffixes: list[str] = []
-        if path:
-            if parsed.query:
-                suffixes.append(f"{path}?{parsed.query}")
-            suffixes.append(path)
+        if path and path.endswith(".do"):
+            suffixes = (path,)
+        else:
+            suffixes = API_PATHS
 
-        for api_path in API_PATHS:
-            if api_path not in suffixes:
-                suffixes.append(api_path)
+        endpoints = [f"{base}{suffix}" for base in base_variants for suffix in suffixes]
 
-        endpoints: list[str] = []
-        for base in base_variants:
-            for suffix in suffixes:
-                if not suffix:
-                    continue
-                url = f"{base}{suffix}"
-                if url not in endpoints:
-                    endpoints.append(url)
-
-        return tuple(endpoints)
+        return tuple(dict.fromkeys(endpoints))
 
     async def _async_fetch(self, base_url: str) -> dict:
         """Fetch data from a specific endpoint."""
