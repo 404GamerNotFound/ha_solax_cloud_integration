@@ -22,6 +22,7 @@ API_PORTS: tuple[str, ...] = (":9443", "")
 API_PATHS: tuple[str, ...] = (
     "/proxy/api/getRealtimeInfo.do",
     "/proxyApp/api/getRealtimeInfo.do",
+    "/proxyApp/proxy/api/getRealtimeInfo.do",
 )
 
 API_BASE_URLS: tuple[str, ...] = tuple(
